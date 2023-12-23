@@ -16,6 +16,8 @@ class _HomePageState extends State<HomePage> {
     ProductosPage(),
     Container(child: Text("Pagina2"),),
     Container(child: Text("Pagina3"),),
+    Container(child: Text("Pagina2"),),
+    Container(child: Text("Pagina3"),),
   ];
 
 
@@ -23,12 +25,19 @@ class _HomePageState extends State<HomePage> {
 
   @override
   Widget build(BuildContext context) {
+    List list = [
+      "Flutter",
+      "React",
+      "Ionic",
+      "Xamarin",
+    ];
     return Scaffold(
-      appBar: AppBar(
-        title: Text('BottomNavigationBar Example'),
-      ),
+
       body: _screens[_currentIndex],
       bottomNavigationBar: BottomNavigationBar(
+        unselectedItemColor: Colors.grey,
+        unselectedLabelStyle: TextStyle(color: Colors.grey,),
+        selectedItemColor: Colors.red,
         currentIndex: _currentIndex,
         onTap: (index) {
           setState(() {
@@ -38,15 +47,23 @@ class _HomePageState extends State<HomePage> {
         items: [
           BottomNavigationBarItem(
             icon: Icon(Icons.home),
-            label: 'Home',
+            label: 'Productos',
           ),
           BottomNavigationBarItem(
-            icon: Icon(Icons.search),
-            label: 'Search',
+            icon: Icon(Icons.store,),
+            label: 'Comercios',
           ),
           BottomNavigationBarItem(
             icon: Icon(Icons.person),
-            label: 'Profile',
+            label: 'Mi ubicacion',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.person),
+            label: 'Rutas',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.person),
+            label: 'Rutas',
           ),
         ],
       ),

@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:getwidget/getwidget.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class ProductosPage extends StatefulWidget {
   const ProductosPage({Key? key}) : super(key: key);
@@ -8,97 +10,102 @@ class ProductosPage extends StatefulWidget {
 }
 
 class _HomePageState extends State<ProductosPage> {
-
-  final List<Map<String, dynamic>> _allUsers = [
-    {"id": 1, "name": "Andy", "age": 29},
-    {"id": 2, "name": "Aragon", "age": 40},
-    {"id": 3, "name": "Bob", "age": 5},
-    {"id": 4, "name": "Barbara", "age": 35},
-    {"id": 5, "name": "Candy", "age": 21},
-    {"id": 6, "name": "Colin", "age": 55},
-    {"id": 7, "name": "Audra", "age": 30},
-    {"id": 8, "name": "Banana", "age": 14},
-    {"id": 9, "name": "Caversky", "age": 100},
-    {"id": 10, "name": "Becky", "age": 32},
+  List list = [
+    "Comerciales",
+    "Productos",
+    "Locales",
+    "Otros...",
   ];
 
-  // This list holds the data for the list view
-  List<Map<String, dynamic>> _foundUsers = [];
-  @override
-  initState() {
+  List<Offset> puntosSeleccionados = [];
 
-    _foundUsers = _allUsers;
+  @override
+  void initState() {
     super.initState();
+    cargarPuntosGuardados();
   }
 
-  // This function is called whenever the text field changes
-  void _runFilter(String enteredKeyword) {
-    List<Map<String, dynamic>> results = [];
-    if (enteredKeyword.isEmpty) {
-      // if the search field is empty or only contains white-space, we'll display all users
-      results = _allUsers;
-    } else {
-      results = _allUsers
-          .where((user) =>
-          user["name"].toLowerCase().contains(enteredKeyword.toLowerCase()))
-          .toList();
-      // we use the toLowerCase() method to make it case-insensitive
+  void cargarPuntosGuardados() async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    List<String>? puntosString = prefs.getStringList('puntosSeleccionados');
+    if (puntosString != null) {
+      setState(() {
+        puntosSeleccionados = puntosString
+            .map((coord) {
+          List<String> coords = coord.split(',');
+          double x = double.parse(coords[0]);
+          double y = double.parse(coords[1]);
+          return Offset(x, y);
+        })
+            .toList();
+      });
     }
+  }
 
+  void guardarPuntos() async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    List<String> puntosString = puntosSeleccionados
+        .map((punto) => "${punto.dx},${punto.dy}")
+        .toList();
+    prefs.setStringList('puntosSeleccionados', puntosString);
   }
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Search Listview'),
-      ),
-      body: Padding(
-        padding: const EdgeInsets.all(10),
-        child: Column(
-          children: [
-            const SizedBox(
-              height: 20,
-            ),
-            TextField(
-              onChanged: (value) => _runFilter(value),
-              decoration: const InputDecoration(
-                  labelText: 'Search', suffixIcon: Icon(Icons.search)),
-            ),
-            const SizedBox(
-              height: 20,
-            ),
-            Expanded(
-              child: _foundUsers.isNotEmpty
-                  ? ListView.builder(
-                itemCount: _foundUsers.length,
-                itemBuilder: (context, index) => Card(
-                  key: ValueKey(_foundUsers[index]["id"]),
-                  color: Colors.blue,
-                  elevation: 4,
-                  margin: const EdgeInsets.symmetric(vertical: 10),
-                  child: ListTile(
-                    leading: Text(
-                      _foundUsers[index]["id"].toString(),
-                      style: const TextStyle(fontSize: 24, color:Colors.white),
-                    ),
-                    title: Text(_foundUsers[index]['name'], style:TextStyle(
-                        color:Colors.white
-                    )),
-                    subtitle: Text(
-                        '${_foundUsers[index]["age"].toString()} years old',style:TextStyle(
-                        color:Colors.white
-                    )),
-                  ),
+    return SingleChildScrollView(
+      child: Column(
+        children: [
+          GFSearchBar(
+            searchList: list,
+            searchQueryBuilder: (query, list) {
+              return list
+                  .where((item) =>
+                  item.toLowerCase().contains(query.toLowerCase()))
+                  .toList();
+            },
+            overlaySearchListItemBuilder: (item) {
+              return Container(
+                padding: const EdgeInsets.all(8),
+                child: Text(
+                  item,
+                  style: const TextStyle(fontSize: 18),
                 ),
-              )
-                  : const Text(
-                'No results found',
-                style: TextStyle(fontSize: 24),
-              ),
+              );
+            },
+            onItemSelected: (item) {
+              setState(() {
+                print('$item');
+              });
+            },
+          ),
+          GestureDetector(
+            onTapUp: (TapUpDetails details) {
+              // Obtenemos las coordenadas del toque
+              RenderBox renderBox = context.findRenderObject() as RenderBox;
+              Offset localPosition = renderBox.globalToLocal(details.globalPosition);
+
+              setState(() {
+                // Agregamos el punto seleccionado a la lista
+                puntosSeleccionados.add(localPosition);
+                // Guardamos los puntos
+                guardarPuntos();
+              });
+            },
+            child: Stack(
+              children: [
+                Image.asset('assets/verticalplano.png'),
+                // Dibujamos los puntos seleccionados
+                ...puntosSeleccionados.map((punto) {
+                  return Positioned(
+                    left: punto.dx - 12,
+                    top: punto.dy - 12,
+                    child: Icon(Icons.location_on, color: Colors.red, size: 24),
+                  );
+                }).toList(),
+              ],
             ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }
